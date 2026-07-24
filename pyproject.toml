@@ -52,10 +52,7 @@ dependencies = [
     "onnx>=1.20.0",
     "onnxscript",
     # cu12 wheels only exist for x86_64; Blackwell / aarch64 requires cu13.
-    "tensorrt-cu12>=10.15.1.29; platform_machine == 'x86_64'",
-    "tensorrt-cu13>=10.15.1.29; platform_machine == 'aarch64'",
-    "tensorrt-cu12-libs>=10.15.1.29; platform_machine == 'x86_64'",
-    "tensorrt-cu13-libs>=10.15.1.29; platform_machine == 'aarch64'",
+    
 ]
 
 [project.optional-dependencies]
@@ -101,12 +98,6 @@ flash-attn = [
     { url = "https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu12torch2.9cxx11abiTRUE-cp312-cp312-linux_aarch64.whl", marker = "sys_platform == 'linux' and platform_machine == 'aarch64'" },
 ]
 
-tensorrt-cu12-libs = [
-    { index = "nvidia-pypi", marker = "platform_machine == 'x86_64'" },
-]
-tensorrt-cu13-libs = [
-    { index = "nvidia-pypi", marker = "platform_machine == 'aarch64'" },
-]
 
 [tool.uv.extra-build-dependencies]
 flash-attn = ["torch==2.9.0", "numpy==1.26.4", "triton==3.5.0"]
@@ -165,10 +156,7 @@ split-on-trailing-comma = false
 lines-after-imports = 2
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
-[[tool.uv.index]]
-name = "nvidia-pypi"
-url = "https://pypi.nvidia.com"
-explicit = true
+
 
 [[tool.uv.index]]
 name = "pytorch-cu128"
