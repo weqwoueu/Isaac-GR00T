@@ -237,4 +237,7 @@ if [ "$NUM_GPUS" = "1" ]; then
     exec python "${LAUNCH_CMD[@]}"
 fi
 
-exec torchrun --nproc_per_node="$NUM_GPUS" --master_port="$MASTER_PORT" "${LAUNCH_CMD[@]}"
+exec python -m torch.distributed.run \
+    --nproc_per_node="$NUM_GPUS" \
+    --master_port="$MASTER_PORT" \
+    "${LAUNCH_CMD[@]}"
