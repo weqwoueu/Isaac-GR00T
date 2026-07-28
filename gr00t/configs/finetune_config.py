@@ -45,6 +45,9 @@ class FinetuneConfig:
     If None, use the pre-registered modality config in `gr00t/configs/data/embodiment_configs.py`. 
     """
 
+    model_name: str = "nvidia/Cosmos-Reason2-2B"
+    """Hugging Face model ID or local directory for the vision-language backbone."""
+
     # --- Model Tuning Flags ---
     tune_llm: bool = False
     """If True, fine-tune the language model (LLM) backbone during training."""
@@ -100,6 +103,9 @@ class FinetuneConfig:
     If set, shortest_image_edge must also be set and legacy image_crop_size/image_target_size
     preprocessing is disabled.
     """
+
+    letter_box_transform: bool = False
+    """Pad mixed-aspect camera views to square before resizing so they can be stacked."""
 
     extra_augmentation_config: str | None = None
     """

@@ -15,6 +15,7 @@ EPISODE_SAMPLING_RATE="${EPISODE_SAMPLING_RATE:-0.1}"
 DS_WEIGHTS_ALPHA="${DS_WEIGHTS_ALPHA:-}"
 
 BASE_MODEL_PATH=""
+MODEL_NAME=""
 DATASET_PATH=""
 MODALITY_CONFIG_PATH=""
 EMBODIMENT_TAG=""
@@ -32,6 +33,7 @@ usage() {
     cat <<'EOF'
 Usage: bash examples/finetune.sh \
   --base-model-path <path> \
+  [--model-name <repo-id-or-path>] \
   --dataset-path <path> \
   --embodiment-tag <tag> \
   --output-dir <path> \
@@ -41,6 +43,7 @@ Usage: bash examples/finetune.sh \
   [--use-percentiles <true|false>] \
   [--shortest-image-edge <pixels>] \
   [--crop-fraction <fraction>] \
+  [--letter-box-transform] \
   [--ds-weights-alpha <value>] \
   [--save-only-model] \
   [--resume-from-checkpoint] \
@@ -52,6 +55,10 @@ while [ "$#" -gt 0 ]; do
     case "$1" in
         --base-model-path)
             BASE_MODEL_PATH="$2"
+            shift 2
+            ;;
+        --model-name)
+            MODEL_NAME="$2"
             shift 2
             ;;
         --dataset-path)
@@ -97,6 +104,10 @@ while [ "$#" -gt 0 ]; do
         --crop-fraction)
             CROP_FRACTION="$2"
             shift 2
+            ;;
+        --letter-box-transform)
+            LETTER_BOX_TRANSFORM=1
+            shift
             ;;
         --ds-weights-alpha)
             DS_WEIGHTS_ALPHA="$2"
@@ -164,6 +175,9 @@ LAUNCH_CMD=(
 if [ -n "$MODALITY_CONFIG_PATH" ]; then
     LAUNCH_CMD+=(--modality_config_path "$MODALITY_CONFIG_PATH")
 fi
+if [ -n "$MODEL_NAME" ]; then
+    LAUNCH_CMD+=(--model_name "$MODEL_NAME")
+fi
 if [ -n "$EXPERIMENT_NAME" ]; then
     LAUNCH_CMD+=(--experiment_name "$EXPERIMENT_NAME")
 fi
@@ -198,6 +212,9 @@ if [ -n "$SHORTEST_IMAGE_EDGE" ]; then
 fi
 if [ -n "$CROP_FRACTION" ]; then
     LAUNCH_CMD+=(--crop-fraction "$CROP_FRACTION")
+fi
+if [ -n "${LETTER_BOX_TRANSFORM:-}" ]; then
+    LAUNCH_CMD+=(--letter-box-transform)
 fi
 if [ -n "$DS_WEIGHTS_ALPHA" ]; then
     LAUNCH_CMD+=(--ds_weights_alpha "$DS_WEIGHTS_ALPHA")

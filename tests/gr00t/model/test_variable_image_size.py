@@ -248,6 +248,36 @@ def processor():
 class TestProcessorVariableImageSize:
     """Test full _get_vlm_inputs path with variable image sizes."""
 
+    def test_letterbox_override_from_pretrained_handles_mixed_aspect_views(self):
+        from unittest.mock import MagicMock, patch
+
+        from gr00t.model.gr00t_n1d7.processing_gr00t_n1d7 import Gr00tN1d7Processor
+
+        mock_vlm = MagicMock()
+        mock_vlm.tokenizer.padding_side = "left"
+
+        with patch(
+            "gr00t.model.gr00t_n1d7.processing_gr00t_n1d7.build_processor",
+            return_value=mock_vlm,
+        ):
+            processor = Gr00tN1d7Processor.from_pretrained(FIXTURE_DIR, letter_box_transform=True)
+
+        assert processor.letter_box_transform is True
+        assert type(processor.train_image_transform.transforms[0]).__name__ == "LetterBoxPad"
+        assert type(processor.eval_image_transform.transforms[0]).__name__ == "LetterBoxPad"
+
+        images = [
+            Image.fromarray(np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8)),
+            Image.fromarray(np.random.randint(0, 255, (640, 480, 3), dtype=np.uint8)),
+        ]
+        transformed, _ = apply_with_replay(processor.train_image_transform, images)
+
+        assert [tuple(image.shape) for image in transformed] == [
+            (3, 256, 256),
+            (3, 256, 256),
+        ]
+        torch.stack(transformed)
+
     def test_variable_size_vlm_inputs(self, processor):
         """Test _get_vlm_inputs with same-aspect variable-size images across views."""
         embodiment_tag = "libero_sim"
