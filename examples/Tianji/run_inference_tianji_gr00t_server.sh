@@ -10,11 +10,15 @@ REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 # =============================================================================
 RUN_DIR="/home/standard/workspace/tianji_demo/checkpoints/Isaac-GR00T/tianji_20d_run_001"
 # 10000 | 15000 | 20000；20000 使用 RUN_DIR 根目录。
-CHECKPOINT_STEP="10000"
+CHECKPOINT_STEP="20000"
 COSMOS_MODEL_NAME="nvidia/Cosmos-Reason2-2B"
-# 保留现有缓存位置，但允许 Hugging Face 联网检查和下载缺失文件。
+# 使用现有 Hugging Face 缓存；当前机器无外网，因此强制仅从本地快照加载。
 HF_HOME="/home/standard/checkpoints/cache/huggingface"
 HF_ENDPOINT="https://huggingface.co"
+HF_HUB_OFFLINE="1"
+TRANSFORMERS_OFFLINE="1"
+GROOT_HF_LOCAL_FIRST="1"
+GROOT_PATCH_MISTRAL="1"
 CUDA_VISIBLE_DEVICES="0"
 DEVICE="cuda:0"
 HOST="0.0.0.0"
@@ -79,11 +83,14 @@ PY
 
 export HF_HOME
 export HF_ENDPOINT
+export HF_HUB_OFFLINE
+export TRANSFORMERS_OFFLINE
+export GROOT_HF_LOCAL_FIRST
+export GROOT_PATCH_MISTRAL
 export CUDA_VISIBLE_DEVICES
-unset HF_HUB_OFFLINE TRANSFORMERS_OFFLINE
 
 "$PYTHON" - "$COSMOS_MODEL_NAME" <<'PY'
-from huggingface_hub import HfApi, get_token
+from huggingface_hub import get_token, snapshot_download
 import sys
 
 model_name = sys.argv[1]
@@ -94,10 +101,10 @@ if token is None:
         "Run `hf auth login` with the same HF_HOME first."
     )
 try:
-    HfApi().model_info(model_name, token=token)
+    snapshot_path = snapshot_download(model_name, token=token, local_files_only=True)
 except Exception as exc:
-    raise SystemExit(f"ERROR: Hugging Face access check failed for {model_name}: {exc}") from exc
-print(f"Hugging Face access OK: {model_name}")
+    raise SystemExit(f"ERROR: cached Hugging Face model is incomplete for {model_name}: {exc}") from exc
+print(f"Hugging Face cached model OK: {snapshot_path}")
 PY
 
 echo "Starting Tianji GR00T inference server"
@@ -106,6 +113,7 @@ echo "  model path:      $MODEL_PATH"
 echo "  Cosmos source:   $COSMOS_MODEL_NAME"
 echo "  HF endpoint:     $HF_ENDPOINT"
 echo "  HF cache:        $HF_HOME"
+echo "  HF offline:      $HF_HUB_OFFLINE"
 echo "  CUDA devices:    $CUDA_VISIBLE_DEVICES"
 echo "  device:          $DEVICE"
 echo "  listen:          $HOST:$PORT"
