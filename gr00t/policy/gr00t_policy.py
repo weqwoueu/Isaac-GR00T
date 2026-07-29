@@ -86,6 +86,7 @@ class Gr00tPolicy(BasePolicy):
         model_path: str,
         *,
         device: int | str,
+        model_name: str | None = None,
         strict: bool = True,
     ):
         """Initialize the Gr00t Policy.
@@ -95,6 +96,8 @@ class Gr00tPolicy(BasePolicy):
                 Accepts an EmbodimentTag enum or a string (resolved case-insensitively).
             model_path: Path to the pretrained model checkpoint directory
             device: Device to run the model on (e.g., 'cuda:0', 0, 'cpu')
+            model_name: Optional VLM backbone name or local path override. When omitted,
+                the value saved in the checkpoint is used.
             strict: Whether to enforce strict input validation (default: True)
         """
         # Import this to register all models.
@@ -106,7 +109,8 @@ class Gr00tPolicy(BasePolicy):
         model_dir = Path(model_path)
 
         # Load the pretrained model and move to target device with bfloat16 precision
-        model = AutoModel.from_pretrained(model_dir)
+        pretrained_kwargs = {"model_name": model_name} if model_name is not None else {}
+        model = AutoModel.from_pretrained(model_dir, **pretrained_kwargs)
         model.eval()  # Set model to evaluation mode
         model.to(device=device, dtype=torch.bfloat16)
         self.model = model
@@ -121,7 +125,9 @@ class Gr00tPolicy(BasePolicy):
             and not (model_dir / "processor_config.json").exists()
             else model_dir
         )
-        self.processor: BaseProcessor = AutoProcessor.from_pretrained(processor_dir)
+        self.processor: BaseProcessor = AutoProcessor.from_pretrained(
+            processor_dir, **pretrained_kwargs
+        )
         self.processor.eval()
 
         # Store embodiment-specific configurations

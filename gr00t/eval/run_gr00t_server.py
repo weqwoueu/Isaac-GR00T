@@ -58,6 +58,9 @@ class ServerConfig:
     model_path: str | None = None
     """Path to the model checkpoint directory"""
 
+    model_name: str | None = None
+    """Optional VLM backbone name or local path override"""
+
     embodiment_tag: str = "new_embodiment"
     """Embodiment tag (name or value, case-insensitive). Run with --help to see known tags."""
 
@@ -93,6 +96,7 @@ def main(config: ServerConfig):
     print("Starting GR00T inference server...")
     print(f"  Embodiment tag: {config.embodiment_tag}")
     print(f"  Model path: {config.model_path}")
+    print(f"  VLM model override: {config.model_name}")
     print(f"  Device: {config.device}")
     print(f"  Host: {config.host}")
     print(f"  Port: {config.port}")
@@ -106,6 +110,7 @@ def main(config: ServerConfig):
             embodiment_tag=config.embodiment_tag,
             model_path=config.model_path,
             device=config.device,
+            model_name=config.model_name,
             strict=config.strict,
         )
     elif config.dataset_path is not None:

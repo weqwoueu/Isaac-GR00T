@@ -49,8 +49,7 @@ def _build_modality_configs():
     }
 
 
-@pytest.fixture
-def policy():
+def _make_init_mocks():
     mock_model = MagicMock()
     mock_model.eval = MagicMock()
     mock_model.to = MagicMock(return_value=mock_model)
@@ -71,6 +70,13 @@ def policy():
     mock_processor.eval = MagicMock()
     mock_processor.training = False
     mock_processor.collator = MagicMock()
+
+    return mock_model, mock_processor
+
+
+@pytest.fixture
+def policy():
+    mock_model, mock_processor = _make_init_mocks()
 
     def fake_process_observation(observation, embodiment_tag):
         return BatchFeature(
@@ -136,6 +142,41 @@ class TestGr00tPolicyInit:
 
     def test_policy_embodiment_tag(self, policy):
         assert policy.embodiment_tag is not None
+
+    @pytest.mark.parametrize(
+        ("model_name", "expected_kwargs"),
+        [
+            (None, {}),
+            ("/models/Cosmos-Reason2-2B", {"model_name": "/models/Cosmos-Reason2-2B"}),
+        ],
+    )
+    def test_model_name_override_is_forwarded_only_when_supplied(self, model_name, expected_kwargs):
+        mock_model, mock_processor = _make_init_mocks()
+
+        with (
+            patch("gr00t.policy.gr00t_policy.AutoModel") as mock_auto_model,
+            patch("gr00t.policy.gr00t_policy.AutoProcessor") as mock_auto_processor,
+            patch("pathlib.Path.is_dir", return_value=False),
+            patch("pathlib.Path.exists", return_value=True),
+        ):
+            mock_auto_model.from_pretrained.return_value = mock_model
+            mock_auto_processor.from_pretrained.return_value = mock_processor
+
+            from gr00t.policy.gr00t_policy import Gr00tPolicy
+
+            Gr00tPolicy(
+                embodiment_tag=EMBODIMENT,
+                model_path="/fake/path",
+                device="cpu",
+                model_name=model_name,
+            )
+
+        mock_auto_model.from_pretrained.assert_called_once_with(
+            Path("/fake/path"), **expected_kwargs
+        )
+        mock_auto_processor.from_pretrained.assert_called_once_with(
+            Path("/fake/path"), **expected_kwargs
+        )
 
 
 class TestGr00tPolicyCheckObservation:
