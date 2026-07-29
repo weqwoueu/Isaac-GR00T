@@ -8,12 +8,13 @@ REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 # =============================================================================
 # 推理参数（直接修改这里）
 # =============================================================================
-RUN_DIR="/home/standard/checkpoints/Isaac-GR00T/tianji_20d_run_001"
+RUN_DIR="/home/standard/workspace/tianji_demo/checkpoints/Isaac-GR00T/tianji_20d_run_001"
 # 10000 | 15000 | 20000；20000 使用 RUN_DIR 根目录。
 CHECKPOINT_STEP="10000"
 COSMOS_MODEL_NAME="nvidia/Cosmos-Reason2-2B"
 # 保留现有缓存位置，但允许 Hugging Face 联网检查和下载缺失文件。
 HF_HOME="/home/standard/checkpoints/cache/huggingface"
+HF_ENDPOINT="https://huggingface.co"
 CUDA_VISIBLE_DEVICES="0"
 DEVICE="cuda:0"
 HOST="0.0.0.0"
@@ -77,13 +78,33 @@ if missing:
 PY
 
 export HF_HOME
+export HF_ENDPOINT
 export CUDA_VISIBLE_DEVICES
 unset HF_HUB_OFFLINE TRANSFORMERS_OFFLINE
+
+"$PYTHON" - "$COSMOS_MODEL_NAME" <<'PY'
+from huggingface_hub import HfApi, get_token
+import sys
+
+model_name = sys.argv[1]
+token = get_token()
+if token is None:
+    raise SystemExit(
+        "ERROR: no Hugging Face token found under the configured HF_HOME. "
+        "Run `hf auth login` with the same HF_HOME first."
+    )
+try:
+    HfApi().model_info(model_name, token=token)
+except Exception as exc:
+    raise SystemExit(f"ERROR: Hugging Face access check failed for {model_name}: {exc}") from exc
+print(f"Hugging Face access OK: {model_name}")
+PY
 
 echo "Starting Tianji GR00T inference server"
 echo "  checkpoint step: $CHECKPOINT_STEP"
 echo "  model path:      $MODEL_PATH"
 echo "  Cosmos source:   $COSMOS_MODEL_NAME"
+echo "  HF endpoint:     $HF_ENDPOINT"
 echo "  HF cache:        $HF_HOME"
 echo "  CUDA devices:    $CUDA_VISIBLE_DEVICES"
 echo "  device:          $DEVICE"
